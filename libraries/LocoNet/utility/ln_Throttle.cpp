@@ -36,7 +36,7 @@
 #define SLOT_REFRESH_TICKS   600   // 600 * 100ms = 60 seconds between speed refresh
 #define THROTTLE_TIMER_TICKS   1   // 1 * 100ms = 100ms ticks
 
-//#ifdef SERIAL_DEBUG  //Uncomment this line to print debug information over the arduino serial link
+//#define SERIAL_DEBUG  //Uncomment this line to print debug information over the arduino serial link
 
 
 #define  RX_CTS_PIN   9
