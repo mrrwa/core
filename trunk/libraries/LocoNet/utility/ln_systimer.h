@@ -31,6 +31,10 @@
 #ifndef __SYS_TIMER_DEFINED
 #define __SYS_TIMER_DEFINED
 
+#if defined (__cplusplus)
+	extern "C" {
+#endif
+
 
 #define TIMER_TICK_FREQUENCY        1000L // 1000kHz = 1ms tick size
 #define TIMER_TICK_PERIOD_MS        (1000/TIMER_TICK_FREQUENCY) // Tick Period in ms
@@ -40,20 +44,24 @@
 
 typedef struct timer_action
 {
-  byte    Ticks ;
+  uint8_t    Ticks ;
   void    *UserPointer ;
-  byte    (*TickAction) ( void *UserPointer ) ;
+  uint8_t    (*TickAction) ( void *UserPointer ) ;
   struct  timer_action *Next ; 
 } TimerAction ;
 
 void initTimer(void) ;
 
-void resetTimerAction( TimerAction *addAction, byte Ticks ) ;  
+void resetTimerAction( TimerAction *addAction, uint8_t Ticks ) ;  
 
-void addTimerAction( TimerAction *addAction, byte Ticks, byte (*TickAction) ( void *UserPointer ), void *UserPointer, byte Fast ) ;  
+void addTimerAction( TimerAction *addAction, uint8_t Ticks, uint8_t (*TickAction) ( void *UserPointer ), void *UserPointer, uint8_t Fast ) ;  
 
-void delayTimer( word delayTicks ) ;
+void delayTimer( uint16_t delayTicks ) ;
 
 void processTimerActions(void) ;
 
+#endif
+
+#if defined (__cplusplus)
+}
 #endif
