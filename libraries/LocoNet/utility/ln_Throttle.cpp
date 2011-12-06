@@ -28,7 +28,7 @@
  * functions to handle the common throttle operations
  * 
  *****************************************************************************/
-#include <WProgram.h>
+
 #include "ln_throttle.h"
 
 
@@ -47,12 +47,12 @@ static   LnBuf        LnTxBuffer ;
 static   lnMsg        *LnPacket;
 
 
-extern void sendLocoNet4BytePacket( byte OpCode, byte Data1, byte Data2);
+extern void sendLocoNet4BytePacket( uint8_t OpCode, uint8_t Data1, uint8_t Data2);
 
 // To make it easier to handle the Speed steps 0 = Stop, 1 = Em Stop and 2 -127
 // normal speed steps we will swap speed steps 0 and 1 so that the normal
 // range for speed steps is Stop = 1 2-127 is normal as before and now 0 = EmStop
-static byte SwapSpeedZeroAndEmStop( byte Speed )
+static uint8_t SwapSpeedZeroAndEmStop( uint8_t Speed )
 {
   if( Speed == 0 )
     return 1 ;
@@ -63,7 +63,7 @@ static byte SwapSpeedZeroAndEmStop( byte Speed )
   return Speed ;
 }
 
-static void updateAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte ForceNotify )
+static void updateAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address, uint8_t ForceNotify )
 {
   if( ForceNotify || ThrottleRec->Address != Address )
   {
@@ -72,7 +72,7 @@ static void updateAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte Forc
   }
 }
 
-static void updateSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed, byte ForceNotify )
+static void updateSpeed( THROTTLE_DATA_T *ThrottleRec, uint8_t Speed, uint8_t ForceNotify )
 {
   if( ForceNotify || ThrottleRec->Speed != Speed )
   {
@@ -81,7 +81,7 @@ static void updateSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed, byte ForceNot
   }
 }
 
-static void updateState( THROTTLE_DATA_T *ThrottleRec, TH_STATE State, byte ForceNotify )
+static void updateState( THROTTLE_DATA_T *ThrottleRec, TH_STATE State, uint8_t ForceNotify )
 {
   TH_STATE  PrevState ;
 
@@ -93,9 +93,9 @@ static void updateState( THROTTLE_DATA_T *ThrottleRec, TH_STATE State, byte Forc
   }
 }
 
-static void updateStatus1( THROTTLE_DATA_T *ThrottleRec, byte Status, byte ForceNotify )
+static void updateStatus1( THROTTLE_DATA_T *ThrottleRec, uint8_t Status, uint8_t ForceNotify )
 {
-  register byte Mask ;	// Temporary Byte Variable for bitwise AND to force
+  register uint8_t Mask ;	// Temporary uint8_t Variable for bitwise AND to force
   // the compiler to only do 8 bit operations not 16
 
   if( ForceNotify || ThrottleRec->Status1 != Status )
@@ -108,11 +108,11 @@ static void updateStatus1( THROTTLE_DATA_T *ThrottleRec, byte Status, byte Force
   }
 }
 
-static void updateDirectionAndFunctions( THROTTLE_DATA_T *ThrottleRec, byte DirFunc0to4, byte ForceNotify )
+static void updateDirectionAndFunctions( THROTTLE_DATA_T *ThrottleRec, uint8_t DirFunc0to4, uint8_t ForceNotify )
 {
-  byte Diffs ;
-  byte Function ;
-  byte Mask ;
+  uint8_t Diffs ;
+  uint8_t Function ;
+  uint8_t Mask ;
 
   if( ForceNotify || ThrottleRec->DirFunc0to4 != DirFunc0to4 )
   {
@@ -130,19 +130,19 @@ static void updateDirectionAndFunctions( THROTTLE_DATA_T *ThrottleRec, byte DirF
 
     // Check Functions 0
     if( ForceNotify || Diffs & DIRF_F0 )
-      notifyThrottleFunction( ThrottleRec->UserData, 0, DirFunc0to4 & (byte)DIRF_F0 ) ;
+      notifyThrottleFunction( ThrottleRec->UserData, 0, DirFunc0to4 & (uint8_t)DIRF_F0 ) ;
 
     // Check Direction
     if( ForceNotify || Diffs & DIRF_DIR )
-      notifyThrottleDirection( ThrottleRec->UserData, ThrottleRec->State, DirFunc0to4 & (byte)DIRF_DIR ) ;
+      notifyThrottleDirection( ThrottleRec->UserData, ThrottleRec->State, DirFunc0to4 & (uint8_t)DIRF_DIR ) ;
   }
 }
 
-static void updateFunctions5to8( THROTTLE_DATA_T *ThrottleRec, byte Func5to8, byte ForceNotify )
+static void updateFunctions5to8( THROTTLE_DATA_T *ThrottleRec, uint8_t Func5to8, uint8_t ForceNotify )
 {
-  byte Diffs ;
-  byte Function ;
-  byte Mask ;
+  uint8_t Diffs ;
+  uint8_t Function ;
+  uint8_t Mask ;
 
   if( ForceNotify || ThrottleRec->Func5to8 != Func5to8 )
   {
@@ -160,7 +160,7 @@ static void updateFunctions5to8( THROTTLE_DATA_T *ThrottleRec, byte Func5to8, by
   }
 }
 
-byte ThrottleTimerAction( void *UserPointer )
+uint8_t ThrottleTimerAction( void *UserPointer )
 {
   THROTTLE_DATA_T *ThrottleRec = (THROTTLE_DATA_T*) UserPointer ;
 
@@ -170,7 +170,7 @@ byte ThrottleTimerAction( void *UserPointer )
 
     if( ( ThrottleRec->DeferredSpeed ) || ( ThrottleRec->TicksSinceLastAction > SLOT_REFRESH_TICKS ) )
     {
-      sendLocoNet4BytePacket( OPC_LOCO_SPD, ThrottleRec->Slot,
+      bytePasendLocoNet4BytePacket( OPC_LOCO_SPD, ThrottleRec->Slot,
       ( ThrottleRec->DeferredSpeed ) ? ThrottleRec->DeferredSpeed : ThrottleRec->Speed ) ;
 
       if( ThrottleRec->DeferredSpeed )
@@ -183,7 +183,7 @@ byte ThrottleTimerAction( void *UserPointer )
   return THROTTLE_TIMER_TICKS ;
 }
 
-void initThrottle( THROTTLE_DATA_T *ThrottleRec, byte UserData, byte Options, word ThrottleId )
+void initThrottle( THROTTLE_DATA_T *ThrottleRec, uint8_t UserData, uint8_t Options, uint16_t ThrottleId )
 {
   ThrottleRec->State = TH_ST_FREE ;
   ThrottleRec->ThrottleId = ThrottleId ;
@@ -195,13 +195,13 @@ void initThrottle( THROTTLE_DATA_T *ThrottleRec, byte UserData, byte Options, wo
 
 void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
 {
-  byte  Data2 ;
-  word  SlotAddress ;
+  uint8_t  Data2 ;
+  uint16_t  SlotAddress ;
 
   // Update our copy of slot information if applicable
   if( LnPacket->sd.command == OPC_SL_RD_DATA )
   {
-    SlotAddress = (word) (( LnPacket->sd.adr2 << 7 ) + LnPacket->sd.adr ) ;
+    SlotAddress = (uint16_t) (( LnPacket->sd.adr2 << 7 ) + LnPacket->sd.adr ) ;
 
     if( ThrottleRec->Slot == LnPacket->sd.slot )
     {
@@ -228,8 +228,8 @@ void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
 
         // Now Write our own Throttle Id to the slot and write it back to the command station
         LnPacket->sd.command = OPC_WR_SL_DATA ;
-        LnPacket->sd.id1 = (byte) ( ThrottleRec->ThrottleId & 0x7F ) ;
-        LnPacket->sd.id2 = (byte) ( ThrottleRec->ThrottleId >> 7 );
+        LnPacket->sd.id1 = (uint8_t) ( ThrottleRec->ThrottleId & 0x7F ) ;
+        LnPacket->sd.id2 = (uint8_t) ( ThrottleRec->ThrottleId >> 7 );
         // jmg Loconet.Send( LnPacket ) ;
       }
       // Ok another throttle did a NULL MOVE with the same slot before we did
@@ -237,7 +237,7 @@ void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
       else if( ThrottleRec->State == TH_ST_SLOT_MOVE )
       {
         updateState( ThrottleRec, TH_ST_SELECT, 1 ) ;
-        sendLocoNet4BytePacket( OPC_LOCO_ADR, (byte) ( ThrottleRec->Address >> 7 ), (byte) ( ThrottleRec->Address & 0x7F ) ) ;
+        bytePasendLocoNet4BytePacket( OPC_LOCO_ADR, (uint8_t) ( ThrottleRec->Address >> 7 ), (uint8_t) ( ThrottleRec->Address & 0x7F ) ) ;
       }
     }
     // Slot data is not for one of our slots so check if we have requested a new addres
@@ -262,7 +262,7 @@ void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
               Data2 = 0 ;
             }
 
-            sendLocoNet4BytePacket( OPC_MOVE_SLOTS, LnPacket->sd.slot, Data2 ) ;
+            bytePasendLocoNet4BytePacket( OPC_MOVE_SLOTS, LnPacket->sd.slot, Data2 ) ;
           }
           else
           {
@@ -274,7 +274,7 @@ void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
         {
           if( ThrottleRec->State == TH_ST_SLOT_FREE )
           {
-            sendLocoNet4BytePacket( OPC_SLOT_STAT1, LnPacket->sd.slot, (byte) ( ThrottleRec->Status1 & ~STAT1_SL_BUSY ) ) ;
+            bytePasendLocoNet4BytePacket( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( ThrottleRec->Status1 & ~STAT1_SL_BUSY ) ) ;
             ThrottleRec->Slot = 0xFF ;
             updateState( ThrottleRec, TH_ST_FREE, 1 ) ;
           }
@@ -327,19 +327,19 @@ void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket )
   }
 }
 
-word getThrottleAddress( THROTTLE_DATA_T *ThrottleRec )
+uint16_t getThrottleAddress( THROTTLE_DATA_T *ThrottleRec )
 {
   return ThrottleRec->Address ;
 }
 
-TH_ERROR setThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address )
+TH_ERROR setThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address )
 {
   if( ThrottleRec->State == TH_ST_FREE )
   {
     updateAddress( ThrottleRec, Address, 1 ) ;
     updateState( ThrottleRec, TH_ST_SELECT, 1 ) ;
 
-    sendLocoNet4BytePacket( OPC_LOCO_ADR, (byte) ( Address >> 7 ), (byte) ( Address & 0x7F ) ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_ADR, (uint8_t) ( Address >> 7 ), (uint8_t) ( Address & 0x7F ) ) ;
     return TH_ER_OK ;
   }
 
@@ -347,7 +347,7 @@ TH_ERROR setThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address )
   return TH_ER_BUSY ;
 }
 
-TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte LastSlot )
+TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address, uint8_t LastSlot )
 {
   if( ThrottleRec->State == TH_ST_FREE )
   {
@@ -355,7 +355,7 @@ TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte
     updateAddress( ThrottleRec, Address, 1 ) ;
     updateState( ThrottleRec, TH_ST_SLOT_RESUME, 1 ) ;
 
-    sendLocoNet4BytePacket( OPC_RQ_SL_DATA, LastSlot, 0 ) ;
+    bytePasendLocoNet4BytePacket( OPC_RQ_SL_DATA, LastSlot, 0 ) ;
     return TH_ER_OK ;
   }
 
@@ -363,14 +363,14 @@ TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte
   return TH_ER_BUSY ;
 }
 
-TH_ERROR freeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address )
+TH_ERROR freeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address )
 {
   if( ThrottleRec->State == TH_ST_FREE )
   {
     updateAddress( ThrottleRec, Address, 1 ) ;
     updateState( ThrottleRec, TH_ST_SLOT_FREE, 1 ) ;
 
-    sendLocoNet4BytePacket( OPC_LOCO_ADR, (byte) ( Address >> 7 ), (byte) ( Address & 0x7F ) ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_ADR, (uint8_t) ( Address >> 7 ), (uint8_t) ( Address & 0x7F ) ) ;
     return TH_ER_OK ;
   }
 
@@ -379,14 +379,14 @@ TH_ERROR freeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address )
 }
 
 
-TH_ERROR dispatchThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address )
+TH_ERROR dispatchThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address )
 {
   if( ThrottleRec->State == TH_ST_FREE)
   {
     updateAddress( ThrottleRec, Address, 1 ) ;
     updateState( ThrottleRec, TH_ST_DISPATCH, 1 ) ;
 
-    sendLocoNet4BytePacket( OPC_LOCO_ADR, (byte) ( Address >> 7 ), (byte) ( Address & 0x7F ) ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_ADR, (uint8_t) ( Address >> 7 ), (uint8_t) ( Address & 0x7F ) ) ;
     return TH_ER_OK ;
   }
 
@@ -400,7 +400,7 @@ TH_ERROR acquireThrottleAddress( THROTTLE_DATA_T *ThrottleRec )
   {
     updateState( ThrottleRec, TH_ST_ACQUIRE, 1 ) ;
 
-    sendLocoNet4BytePacket( OPC_MOVE_SLOTS, 0, 0 ) ;
+    bytePasendLocoNet4BytePacket( OPC_MOVE_SLOTS, 0, 0 ) ;
     return TH_ER_OK ;
   }
 
@@ -412,19 +412,19 @@ void releaseThrottleAddress( THROTTLE_DATA_T *ThrottleRec )
 {
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
-    sendLocoNet4BytePacket( OPC_SLOT_STAT1, ThrottleRec->Slot, (byte) ( ThrottleRec->Status1 & ~STAT1_SL_BUSY ) ) ;
+    bytePasendLocoNet4BytePacket( OPC_SLOT_STAT1, ThrottleRec->Slot, (uint8_t) ( ThrottleRec->Status1 & ~STAT1_SL_BUSY ) ) ;
   }
 
   ThrottleRec->Slot = 0xFF ;
   updateState( ThrottleRec, TH_ST_FREE, 1 ) ;
 }
 
-byte getThrottleSpeed( THROTTLE_DATA_T *ThrottleRec )
+uint8_t getThrottleSpeed( THROTTLE_DATA_T *ThrottleRec )
 {
   return SwapSpeedZeroAndEmStop( ThrottleRec->Speed ) ;
 }
 
-TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed )
+TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, uint8_t Speed )
 {
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
@@ -438,7 +438,7 @@ TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed )
         ThrottleRec->DeferredSpeed = Speed ;
       else
       {
-        sendLocoNet4BytePacket( OPC_LOCO_SPD, ThrottleRec->Slot, Speed ) ;
+        bytePasendLocoNet4BytePacket( OPC_LOCO_SPD, ThrottleRec->Slot, Speed ) ;
         ThrottleRec->TicksSinceLastAction = 0 ;
         ThrottleRec->DeferredSpeed = 0 ;
       }
@@ -450,17 +450,17 @@ TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed )
   return TH_ER_NOT_SELECTED ;
 }
 
-byte getThrottleDirection( THROTTLE_DATA_T *ThrottleRec )
+uint8_t getThrottleDirection( THROTTLE_DATA_T *ThrottleRec )
 {
-  return ThrottleRec->DirFunc0to4 & (byte)DIRF_DIR ;
+  return ThrottleRec->DirFunc0to4 & (uint8_t)DIRF_DIR ;
 }
 
-TH_ERROR setThrottleDirection( THROTTLE_DATA_T *ThrottleRec, byte Direction )
+TH_ERROR setThrottleDirection( THROTTLE_DATA_T *ThrottleRec, uint8_t Direction )
 {
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
-    sendLocoNet4BytePacket( OPC_LOCO_DIRF, ThrottleRec->Slot,
-    ( Direction ) ? (byte) ( ThrottleRec->DirFunc0to4 | DIRF_DIR ) : (byte) ( ThrottleRec->DirFunc0to4 & ~DIRF_DIR ) ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_DIRF, ThrottleRec->Slot,
+    ( Direction ) ? (uint8_t) ( ThrottleRec->DirFunc0to4 | DIRF_DIR ) : (uint8_t) ( ThrottleRec->DirFunc0to4 & ~DIRF_DIR ) ) ;
 
     ThrottleRec->TicksSinceLastAction = 0 ;
     return TH_ER_OK ;
@@ -470,25 +470,25 @@ TH_ERROR setThrottleDirection( THROTTLE_DATA_T *ThrottleRec, byte Direction )
   return TH_ER_NOT_SELECTED ;
 }
 
-byte getThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function )
+uint8_t getThrottleFunction( THROTTLE_DATA_T *ThrottleRec, uint8_t Function )
 {
-  byte Mask ;
+  uint8_t Mask ;
 
   if( Function <= 4 )
   {
-    Mask = (byte) (1 << ((Function) ? Function - 1 : 4 )) ;
+    Mask = (uint8_t) (1 << ((Function) ? Function - 1 : 4 )) ;
     return ThrottleRec->DirFunc0to4 & Mask ;
   }
 
-  Mask = (byte) (1 << (Function - 5)) ;
+  Mask = (uint8_t) (1 << (Function - 5)) ;
   return ThrottleRec->Func5to8 & Mask ;
 }
 
-TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function, byte Value )
+TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, uint8_t Function, uint8_t Value )
 {
-  byte Mask ;
-  byte OpCode ;
-  byte Data ;
+  uint8_t Mask ;
+  uint8_t OpCode ;
+  uint8_t Data ;
 
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
@@ -496,21 +496,21 @@ TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function, byte 
     {
       OpCode = OPC_LOCO_DIRF ;
       Data = ThrottleRec->DirFunc0to4 ;
-      Mask = (byte)(1 << ((Function) ? Function - 1 : 4 )) ;
+      Mask = (uint8_t)(1 << ((Function) ? Function - 1 : 4 )) ;
     }
     else
     {
       OpCode = OPC_LOCO_SND ;
       Data = ThrottleRec->Func5to8 ;
-      Mask = (byte)(1 << (Function - 5)) ;
+      Mask = (uint8_t)(1 << (Function - 5)) ;
     }
 
     if( Value )
       Data |= Mask ;
     else
-      Data &= (byte)~Mask ;
+      Data &= (uint8_t)~Mask ;
 
-    sendLocoNet4BytePacket( OpCode, ThrottleRec->Slot, Data ) ;
+    bytePasendLocoNet4BytePacket( OpCode, ThrottleRec->Slot, Data ) ;
 
     ThrottleRec->TicksSinceLastAction = 0 ;
     return TH_ER_OK ;
@@ -520,11 +520,11 @@ TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function, byte 
   return TH_ER_NOT_SELECTED ;
 }
 
-TH_ERROR setThrottleDirFunc0to4Direct( THROTTLE_DATA_T *ThrottleRec, byte Value )
+TH_ERROR setThrottleDirFunc0to4Direct( THROTTLE_DATA_T *ThrottleRec, uint8_t Value )
 {
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
-    sendLocoNet4BytePacket( OPC_LOCO_DIRF, ThrottleRec->Slot, Value & 0x7F ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_DIRF, ThrottleRec->Slot, Value & 0x7F ) ;
     return TH_ER_OK ;
   }
 
@@ -532,11 +532,11 @@ TH_ERROR setThrottleDirFunc0to4Direct( THROTTLE_DATA_T *ThrottleRec, byte Value 
   return TH_ER_NOT_SELECTED ;
 }
 
-TH_ERROR setThrottleFunc5to8Direct( THROTTLE_DATA_T *ThrottleRec, byte Value )
+TH_ERROR setThrottleFunc5to8Direct( THROTTLE_DATA_T *ThrottleRec, uint8_t Value )
 {
   if( ThrottleRec->State == TH_ST_IN_USE )
   {
-    sendLocoNet4BytePacket( OPC_LOCO_SND, ThrottleRec->Slot, Value & 0x7F ) ;
+    bytePasendLocoNet4BytePacket( OPC_LOCO_SND, ThrottleRec->Slot, Value & 0x7F ) ;
     return TH_ER_OK ;
   }
 
@@ -614,12 +614,12 @@ char *getErrorStr( TH_ERROR Error )
   }
 }
 
-void sendLocoNet4BytePacket( byte OpCode, byte Data1, byte Data2)
+void bytePasendLocoNet4BytePacket( uint8_t OpCode, uint8_t Data1, uint8_t Data2)
 {
   LocoNet.send(OpCode, Data1, Data2, 0);
 }
 
-void notifyThrottleAddress( byte UserData, TH_STATE State, word Address, byte Slot )
+void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -633,7 +633,7 @@ void notifyThrottleAddress( byte UserData, TH_STATE State, word Address, byte Sl
 #endif
 }
 
-void notifyThrottleSpeed( byte UserData, TH_STATE State, byte Speed )
+void notifyThrottleSpeed( uint8_t UserData, TH_STATE State, uint8_t Speed )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -646,7 +646,7 @@ void notifyThrottleSpeed( byte UserData, TH_STATE State, byte Speed )
 
 }
 
-void notifyThrottleDirection( byte UserData, TH_STATE State, byte Direction )
+void notifyThrottleDirection( uint8_t UserData, TH_STATE State, uint8_t Direction )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -658,7 +658,7 @@ void notifyThrottleDirection( byte UserData, TH_STATE State, byte Direction )
 #endif
 }
 
-void notifyThrottleFunction( byte UserData, byte Function, byte Value )
+void notifyThrottleFunction( uint8_t UserData, uint8_t Function, uint8_t Value )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -671,7 +671,7 @@ void notifyThrottleFunction( byte UserData, byte Function, byte Value )
 
 }
 
-void notifyThrottleSlotStatus( byte UserData, byte Status )
+void notifyThrottleSlotStatus( uint8_t UserData, uint8_t Status )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -681,7 +681,7 @@ void notifyThrottleSlotStatus( byte UserData, byte Status )
 #endif
 }
 
-void notifyThrottleError( byte UserData, TH_ERROR Error )
+void notifyThrottleError( uint8_t UserData, TH_ERROR Error )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");
@@ -691,7 +691,7 @@ void notifyThrottleError( byte UserData, TH_ERROR Error )
 #endif
 }
 
-void notifyThrottleState( byte UserData, TH_STATE PrevState, TH_STATE State )
+void notifyThrottleState( uint8_t UserData, TH_STATE PrevState, TH_STATE State )
 {
 #ifdef SERIAL_DEBUG
   Serial.print("ThrottleAddress , Usr:");

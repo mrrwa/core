@@ -110,52 +110,52 @@ typedef enum
 typedef struct throttle_data_t
 {
   TH_STATE    State ;         // State of throttle
-  word        TicksSinceLastAction ;
-  word	      ThrottleId ;		// Id of throttle
-  byte        Slot ;          // Master Slot index
-  word        Address ;       // Decoder Address
-  byte        Speed ;         // Loco Speed
-  byte        DeferredSpeed ; // Deferred Loco Speed setting
-  byte        Status1 ;       // Stat1
-  byte        DirFunc0to4 ;   // Direction
-  byte        Func5to8 ;       // Direction
-  byte        UserData ;
-  byte	      Options ;
+  uint16_t        TicksSinceLastAction ;
+  uint16_t	      ThrottleId ;		// Id of throttle
+  uint8_t        Slot ;          // Master Slot index
+  uint16_t        Address ;       // Decoder Address
+  uint8_t        Speed ;         // Loco Speed
+  uint8_t        DeferredSpeed ; // Deferred Loco Speed setting
+  uint8_t        Status1 ;       // Stat1
+  uint8_t        DirFunc0to4 ;   // Direction
+  uint8_t        Func5to8 ;       // Direction
+  uint8_t        UserData ;
+  uint8_t	      Options ;
   TimerAction ThrottleTimer ;
 } THROTTLE_DATA_T;
 
-void initThrottle( THROTTLE_DATA_T *ThrottleRec, byte UserData, byte Options, word ThrottleId ) ;
+void initThrottle( THROTTLE_DATA_T *ThrottleRec, uint8_t UserData, uint8_t Options, uint16_t ThrottleId ) ;
 
 void processThrottleMessage( THROTTLE_DATA_T *ThrottleRec, lnMsg *LnPacket ) ;
 
-word getThrottleAddress( THROTTLE_DATA_T *ThrottleRec ) ;
-TH_ERROR setThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address ) ;
-TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address, byte LastSlot ) ;
-TH_ERROR dispatchThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address ) ;
+uint16_t getThrottleAddress( THROTTLE_DATA_T *ThrottleRec ) ;
+TH_ERROR setThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address ) ;
+TH_ERROR resumeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address, uint8_t LastSlot ) ;
+TH_ERROR dispatchThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address ) ;
 TH_ERROR acquireThrottleAddress( THROTTLE_DATA_T *ThrottleRec ) ;
 void releaseThrottleAddress( THROTTLE_DATA_T *ThrottleRec ) ;
-TH_ERROR freeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, word Address ) ;
+TH_ERROR freeThrottleAddress( THROTTLE_DATA_T *ThrottleRec, uint16_t Address ) ;
 
-byte getThrottleSpeed( THROTTLE_DATA_T *ThrottleRec ) ;
-TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, byte Speed ) ;
+uint8_t getThrottleSpeed( THROTTLE_DATA_T *ThrottleRec ) ;
+TH_ERROR setThrottleSpeed( THROTTLE_DATA_T *ThrottleRec, uint8_t Speed ) ;
 
-byte getThrottleDirection( THROTTLE_DATA_T *ThrottleRec ) ;
-TH_ERROR setThrottleDirection( THROTTLE_DATA_T *ThrottleRec, byte Direction ) ;
+uint8_t getThrottleDirection( THROTTLE_DATA_T *ThrottleRec ) ;
+TH_ERROR setThrottleDirection( THROTTLE_DATA_T *ThrottleRec, uint8_t Direction ) ;
 
-byte getThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function ) ;
-TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, byte Function, byte Value ) ;
-TH_ERROR setThrottleDirFunc0to4Direct( THROTTLE_DATA_T *ThrottleRec, byte Value ) ;
-TH_ERROR setThrottleFunc5to8Direct( THROTTLE_DATA_T *ThrottleRec, byte Value ) ;
+uint8_t getThrottleFunction( THROTTLE_DATA_T *ThrottleRec, uint8_t Function ) ;
+TH_ERROR setThrottleFunction( THROTTLE_DATA_T *ThrottleRec, uint8_t Function, uint8_t Value ) ;
+TH_ERROR setThrottleDirFunc0to4Direct( THROTTLE_DATA_T *ThrottleRec, uint8_t Value ) ;
+TH_ERROR setThrottleFunc5to8Direct( THROTTLE_DATA_T *ThrottleRec, uint8_t Value ) ;
 
 TH_STATE getThrottleState( THROTTLE_DATA_T *ThrottleRec ) ;
 
-void notifyThrottleAddress( byte UserData, TH_STATE State, word Address, byte Slot ) ;
-void notifyThrottleSpeed( byte UserData, TH_STATE State, byte Speed ) ;
-void notifyThrottleDirection( byte UserData, TH_STATE State, byte Direction ) ;
-void notifyThrottleFunction( byte UserData, byte Function, byte Value ) ;
-void notifyThrottleSlotStatus( byte UserData, byte Status ) ;
-void notifyThrottleError( byte UserData, TH_ERROR Error ) ;
-void notifyThrottleState( byte UserData, TH_STATE PrevState, TH_STATE State ) ;
+void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot ) ;
+void notifyThrottleSpeed( uint8_t UserData, TH_STATE State, uint8_t Speed ) ;
+void notifyThrottleDirection( uint8_t UserData, TH_STATE State, uint8_t Direction ) ;
+void notifyThrottleFunction( uint8_t UserData, uint8_t Function, uint8_t Value ) ;
+void notifyThrottleSlotStatus( uint8_t UserData, uint8_t Status ) ;
+void notifyThrottleError( uint8_t UserData, TH_ERROR Error ) ;
+void notifyThrottleState( uint8_t UserData, TH_STATE PrevState, TH_STATE State ) ;
 
 char *getStateStr( TH_STATE State ) ;
 char *getErrorStr( TH_ERROR Error ) ;

@@ -33,10 +33,10 @@
  *                 around a second every 3 minutes.
  *****************************************************************************/
 
-#include <WProgram.h>
 #include <avr/interrupt.h>	// switch global interrupt enable flag
 
 #include "ln_systimer.h"
+
 
 #define TIMER_PRESCALER_COUNT 250L    
 #define TIMER_PRESCALER_CODE  3  
@@ -46,14 +46,14 @@
 static TimerAction *SlowTimerActionList = 0 ; // 100 ms ticks
 static TimerAction *FastTimerActionList = 0 ; // 1 ms ticks
 
-byte SlowTimerAccumulator = 0 ;
-volatile byte SlowTimerTicks = 0 ;
-volatile byte FastTimerTicks = 0 ;
-volatile word DelayTimerTicks = 0 ;
+uint8_t SlowTimerAccumulator = 0 ;
+volatile uint8_t SlowTimerTicks = 0 ;
+volatile uint8_t FastTimerTicks = 0 ;
+volatile uint16_t DelayTimerTicks = 0 ;
 
 ISR(TIMER2_OVF_vect)
 {
-  TCNT0 = (byte) TICK_RELOAD ;
+  TCNT0 = (uint8_t) TICK_RELOAD ;
 
   FastTimerTicks++;
 
@@ -74,7 +74,7 @@ void initTimer()
 
 
   // Get the Current Timer1 Count and Add the offset for the Compare target
-  TCNT2 = (byte) TICK_RELOAD ;
+  TCNT2 = (uint8_t) TICK_RELOAD ;
 
   // Clear the Overflow interrupt status bit and enable the overflow interrupt
   TIFR2 |= _BV(TOV2);
@@ -90,9 +90,9 @@ void initTimer()
 
 }
 
-void addTimerAction( TimerAction *pAction, byte Ticks, byte (*TickAction) ( void *UserPointer ), void *UserPointer, byte Fast )
+void addTimerAction( TimerAction *pAction, uint8_t Ticks, uint8_t (*TickAction) ( void *UserPointer ), void *UserPointer, uint8_t Fast )
 {
-  byte  StatusReg ;
+  uint8_t  StatusReg ;
 
   // This needs to be done with Interrupts off, save Status reg,
   // disable interrupts and then restore the previous Status reg
@@ -119,12 +119,12 @@ void addTimerAction( TimerAction *pAction, byte Ticks, byte (*TickAction) ( void
   SREG = StatusReg ;
 }
 
-void resetTimerAction( TimerAction *pAction, byte Ticks )
+void resetTimerAction( TimerAction *pAction, uint8_t Ticks )
 {
   pAction->Ticks = Ticks ;
 }
 
-void delayTimer( word delayTicks )
+void delayTimer( uint16_t delayTicks )
 {
   DelayTimerTicks = delayTicks ;
 
@@ -135,9 +135,9 @@ void delayTimer( word delayTicks )
 void processTimerActions(void)
 {
   TimerAction *pAction ;
-  byte StatusReg ;
-  byte FastTicks ;
-  byte SlowTicks ;
+  uint8_t StatusReg ;
+  uint8_t FastTicks ;
+  uint8_t SlowTicks ;
 
   // This needs to be done with Interrupts off, save Status reg,
   // disable interrupts and then restore the previous Status reg
