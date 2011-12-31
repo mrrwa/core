@@ -41,7 +41,11 @@ void loop()
 
       // Send the received packet out byte by byte to the PC
     for( uint8_t Index = 0; Index < Length; Index++ )
+#if defined(ARDUINO) && ARDUINO >= 100
+      Serial.write(LnPacket->data[ Index ]);
+#else 
       Serial.print(LnPacket->data[ Index ], BYTE);
+#endif
   }
 
     // Check to see if there are any bytes from the PC

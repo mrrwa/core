@@ -28,8 +28,10 @@
 // Uncomment the following line to Enable MutliFunction Decoder Operations
 //#define NMRA_DCC_PROCESS_MULTIFUNCTION
 
-#ifndef Wiring_h
-#include <WProgram.h>
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
 #endif
 
 #ifndef NMRADCC_IS_IN

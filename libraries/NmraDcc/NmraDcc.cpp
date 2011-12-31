@@ -21,9 +21,8 @@
 //			  and build DCC Mobile and Stationary Decoders
 //------------------------------------------------------------------------
 
-#include <avr/eeprom.h>
-
 #include "NmraDcc.h"
+#include <avr/eeprom.h>
 
 #define DCC_BIT      PIND2   // must be located on INT0
 #define DCC_PORT_IN  PIND    // must be defined to port with INT0 pin
