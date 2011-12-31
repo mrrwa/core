@@ -33,15 +33,14 @@
 
 *****************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #include <LocoNet.h>
 #include "ln_systimer.h"
 
 #define MAX_THROTTLES 2
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum
 {
