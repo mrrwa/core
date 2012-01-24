@@ -7,6 +7,27 @@
 NmraDcc  Dcc ;
 DCC_MSG  Packet ;
 
+struct CVPair
+{
+  uint16_t  CV;
+  uint8_t   Value;
+};
+  
+CVPair FactoryDefaultCVs [] =
+{
+  {CV_ACCESSORY_DECODER_ADDRESS_LSB, 1},
+  {CV_ACCESSORY_DECODER_ADDRESS_MSB, 0},
+};
+
+uint8_t FactoryDefaultCVIndex = 0;
+
+void notifyCVResetFactoryDefault()
+{
+  // Make FactoryDefaultCVIndex non-zero and equal to num CV's to be reset 
+  // to flag to the loop() function that a reset to Factory Defaults needs to be done
+  FactoryDefaultCVIndex = sizeof(FactoryDefaultCVs)/sizeof(CVPair);
+};
+
 const int DccAckPin = 3 ;
 
 // This function is called by the NmraDcc library when a DCC ACK needs to be sent
@@ -73,4 +94,10 @@ void loop()
 {
   // You MUST call the NmraDcc.process() method frequently from the Arduino loop() function for correct library operation
   Dcc.process();
+  
+  if( FactoryDefaultCVIndex && Dcc.isSetCVReady())
+  {
+    FactoryDefaultCVIndex--; // Decrement first as initially it is the size of the array 
+    Dcc.setCV( FactoryDefaultCVs[FactoryDefaultCVIndex].CV, FactoryDefaultCVs[FactoryDefaultCVIndex].Value);
+  }
 }
