@@ -17,6 +17,7 @@ init				KEYWORD2
 process				KEYWORD2
 getCV				KEYWORD2
 setCV				KEYWORD2
+isSetCVReady		KEYWORD2
 notifyDccReset		KEYWORD2
 notifyDccIdle		KEYWORD2
 notifyDccSpeed		KEYWORD2
@@ -27,6 +28,7 @@ notifyDccMsg		KEYWORD2
 notifyCVValid		KEYWORD2
 notifyCVRead		KEYWORD2
 notifyCVWrite		KEYWORD2
+notifyIsSetCVReady	KEYWORD2
 notifyCVChange		KEYWORD2
 notifyCVAck			KEYWORD2
 notifyCVResetFactoryDefault	KEYWORD2

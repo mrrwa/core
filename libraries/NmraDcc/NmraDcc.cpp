@@ -190,7 +190,7 @@ void ackCV(void)
 
 uint8_t validCV( uint16_t CV, uint8_t Writable )
 {
-  if( notifyCVResetFactoryDefault && (CV == CV_MANUFACTURER_ID ) )
+  if( notifyCVResetFactoryDefault && (CV == CV_MANUFACTURER_ID )  && Writable )
 	notifyCVResetFactoryDefault();
 	
   if( notifyCVValid )
@@ -692,6 +692,14 @@ uint8_t NmraDcc::getCV( uint16_t CV )
 uint8_t NmraDcc::setCV( uint16_t CV, uint8_t Value)
 {
   return writeCV(CV,Value);
+}
+
+uint8_t NmraDcc::isSetCVReady(void)
+{
+  if(notifyIsSetCVReady)
+	return notifyIsSetCVReady();
+	
+  return eeprom_is_ready();
 }
 
 uint8_t NmraDcc::process()

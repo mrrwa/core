@@ -104,6 +104,7 @@ class NmraDcc
     uint8_t process();
     uint8_t getCV( uint16_t CV );
     uint8_t setCV( uint16_t CV, uint8_t Value);
+	uint8_t isSetCVReady( void );
 };
 
 extern void notifyDccReset(uint8_t hardReset ) __attribute__ ((weak));
@@ -121,6 +122,7 @@ extern void    notifyDccMsg( DCC_MSG * Msg ) __attribute__ ((weak));
 extern uint8_t notifyCVValid( uint16_t CV, uint8_t Writable ) __attribute__ ((weak));
 extern uint8_t notifyCVRead( uint16_t CV) __attribute__ ((weak));
 extern uint8_t notifyCVWrite( uint16_t CV, uint8_t Value) __attribute__ ((weak));
+extern uint8_t notifyIsSetCVReady(void) __attribute__ ((weak));
 extern void    notifyCVChange( uint16_t CV, uint8_t Value) __attribute__ ((weak));
 extern void    notifyCVResetFactoryDefault(void) __attribute__ ((weak));
 
