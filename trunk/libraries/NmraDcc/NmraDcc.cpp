@@ -24,9 +24,16 @@
 #include "NmraDcc.h"
 #include <avr/eeprom.h>
 
-#define DCC_BIT      PIND2   // must be located on INT0
-#define DCC_PORT_IN  PIND    // must be defined to port with INT0 pin
-#define DCC_PORT	 PORTD   // Output port for INT0 to enable Pull-Up
+#if defined(EICRA) && defined(ISC00) && defined(EIMSK)
+	#define DCC_BIT      PINB0   // must be located on INT0
+	#define DCC_PORT_IN  PINB    // must be defined to port with INT0 pin
+	#define DCC_PORT	 PORTB   // Output port for INT0 to enable Pull-Up
+#else
+	#define DCC_BIT      PIND2   // must be located on INT0
+	#define DCC_PORT_IN  PIND    // must be defined to port with INT0 pin
+	#define DCC_PORT	 PORTD   // Output port for INT0 to enable Pull-Up
+#endif
+
 
 //------------------------------------------------------------------------
 // DCC Receive Routine
