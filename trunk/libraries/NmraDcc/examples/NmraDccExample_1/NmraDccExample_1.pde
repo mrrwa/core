@@ -42,7 +42,9 @@ void notifyCVAck(void)
 }
 
 // Uncomment to print all DCC Packets
-/*void notifyDccMsg( DCC_MSG * Msg)
+//#define NOTIFY_DCC_MSG
+#ifdef  NOTIFY_DCC_MSG
+void notifyDccMsg( DCC_MSG * Msg)
 {
   Serial.print("notifyDccMsg: ") ;
   for(uint8_t i = 0; i < Msg->Size; i++)
@@ -51,7 +53,8 @@ void notifyCVAck(void)
     Serial.write(' ');
   }
   Serial.println();
-}*/
+}
+#endif
 
 // This function is called whenever a normal DCC Turnout Packet is received
 void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State)
@@ -85,8 +88,12 @@ void setup()
   pinMode( DccAckPin, OUTPUT );
 
   Serial.println("NMRA DCC Example 1");
+  
+  // Setup which External Interrupt, the Pin it's associated we're using and if we want to enable the Pull-Up 
+  Dcc.pin(0, 2, 1);
+  
   // Call the main DCC Init function to enable the DCC Receiver
-  Dcc.init( MAN_ID_DIY, 10, FLAGS_OUTPUT_ADDRESS_MODE | FLAGS_DCC_ACCESSORY_DECODER | FLAGS_ENABLE_INT0_PULL_UP, 0 );
+  Dcc.init( MAN_ID_DIY, 10, FLAGS_OUTPUT_ADDRESS_MODE | FLAGS_DCC_ACCESSORY_DECODER, 0 );
   Serial.println("Init Done");
 }
 

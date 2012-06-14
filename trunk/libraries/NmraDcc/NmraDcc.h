@@ -70,9 +70,6 @@ typedef struct
  
 // Product/Version Id Codes allocated under: MAN_ID_DIY
 
-//#define NMRA_DCC_PROCESS_MULTIFUNCTION	// Uncomment to process MultiFunction/Mobile/Locomotive Decoder features
-//#define NMRA_DCC_PROCESS_SERVICEMODE		// Uncomment to process Service Mode Programming features
-
 // Standard CV Addresses
 #define CV_ACCESSORY_DECODER_ADDRESS_LSB       1
 #define CV_ACCESSORY_DECODER_ADDRESS_MSB       9
@@ -96,10 +93,9 @@ class NmraDcc
 
 // Flag values to be logically ORed together and passed into the init() method
 #define FLAGS_MY_ADDRESS_ONLY				0x01	// Only process DCC Packets with My Address
-#define FLAGS_ENABLE_INT0_PULL_UP		0x02	// Enable the internal Pull-Up re
 #define FLAGS_OUTPUT_ADDRESS_MODE		0x40  // CV 29/541 bit 6
 #define FLAGS_DCC_ACCESSORY_DECODER	0x80  // CV 29/541 bit 7
-
+	void pin( uint8_t ExtIntNum, uint8_t ExtIntPinNum, uint8_t EnablePullup); 
     void init( uint8_t ManufacturerId, uint8_t VersionId, uint8_t Flags, uint8_t OpsModeAddressBaseCV );
     uint8_t process();
     uint8_t getCV( uint16_t CV );
