@@ -2,7 +2,7 @@
 
 // This Example shows how to use the library as a DCC Accessory Decoder or a DCC Signalling Decoder
 // It responds to both the normal DCC Turnout Control packets and the newer DCC Signal Aspect packets 
-// You can also print every DCC packet by uncommenting the notifyDccMsg() function below
+// You can also print every DCC packet by uncommenting the "#define NOTIFY_DCC_MSG" line below
 
 NmraDcc  Dcc ;
 DCC_MSG  Packet ;
@@ -89,7 +89,7 @@ void setup()
 
   Serial.println("NMRA DCC Example 1");
   
-  // Setup which External Interrupt, the Pin it's associated we're using and if we want to enable the Pull-Up 
+  // Setup which External Interrupt, the Pin it's associated with that we're using and enable the Pull-Up 
   Dcc.pin(0, 2, 1);
   
   // Call the main DCC Init function to enable the DCC Receiver

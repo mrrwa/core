@@ -27,20 +27,20 @@
 //------------------------------------------------------------------------
 // DCC Receive Routine
 //
-// Howto:    uses two interrupts: a rising edge in DCC polarity triggers INT0;
-//           in INT0, Timer2 with a delay of 87us is started.
-//           On Timer2 Compare B Match the level of DCC is evaluated and
+// Howto:    uses two interrupts: a rising edge in DCC polarity triggers INTx
+//           in INTx handler, Timer0 CompareB with a delay of 80us is started.
+//           On Timer0 CompareB Match the level of DCC is evaluated and
 //           parsed.
 //
 //                           |<-----116us----->|
 //
 //           DCC 1: _________XXXXXXXXX_________XXXXXXXXX_________
-//                           ^-INT0
+//                           ^-INTx
 //                           |----87us--->|
 //                                        ^Timer-INT: reads zero
 //
 //           DCC 0: _________XXXXXXXXXXXXXXXXXX__________________
-//                           ^-INT0
+//                           ^-INTx
 //                           |----------->|
 //                                        ^Timer-INT: reads one
 //           
@@ -110,7 +110,7 @@ ISR(TIMER0_COMPB_vect)
   // Read the DCC input value, if it's low then its a 1 bit, otherwise it is a 0 bit
   DccBitVal = !digitalRead(DccProcState.ExtIntPinNum) ;
 
-  // Disable Timer2 Compare Match B Interrupt
+  // Disable Timer0 Compare Match B Interrupt
   TIMSK0 &= ~(1<<OCIE0B);
 
   DccRx.BitCount++;
