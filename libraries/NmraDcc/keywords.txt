@@ -13,6 +13,7 @@ NmraDcc		KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 NmraDcc				KEYWORD2
+pin					KEYWORD2
 init				KEYWORD2
 process				KEYWORD2
 getCV				KEYWORD2

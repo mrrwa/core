@@ -24,17 +24,6 @@
 #include "NmraDcc.h"
 #include <avr/eeprom.h>
 
-#if defined(EICRA) && defined(ISC00) && defined(EIMSK)
-	#define DCC_BIT      PINB0   // must be located on INT0
-	#define DCC_PORT_IN  PINB    // must be defined to port with INT0 pin
-	#define DCC_PORT	 PORTB   // Output port for INT0 to enable Pull-Up
-#else
-	#define DCC_BIT      PIND2   // must be located on INT0
-	#define DCC_PORT_IN  PIND    // must be defined to port with INT0 pin
-	#define DCC_PORT	 PORTD   // Output port for INT0 to enable Pull-Up
-#endif
-
-
 //------------------------------------------------------------------------
 // DCC Receive Routine
 //
@@ -99,12 +88,14 @@ typedef struct
   uint8_t   PageRegister ;  // Used for Paged Operations in Service Mode Programming
   uint8_t   DuplicateCount ;
   DCC_MSG   LastMsg ;
+  uint8_t	ExtIntNum; 
+  uint8_t	ExtIntPinNum; 
 } 
 DCC_PROCESSOR_STATE ;
 
 DCC_PROCESSOR_STATE DccProcState ;
 
-ISR(INT0_vect)
+void ExternalInterruptHandler(void)
 {
   OCR0B = TCNT0 + DCC_BIT_SAMPLE_PERIOD ;
 
@@ -117,7 +108,7 @@ ISR(TIMER0_COMPB_vect)
   uint8_t DccBitVal ;
 
   // Read the DCC input value, if it's low then its a 1 bit, otherwise it is a 0 bit
-  DccBitVal = !(DCC_PORT_IN & (1<<DCC_BIT )) ;
+  DccBitVal = !digitalRead(DccProcState.ExtIntPinNum) ;
 
   // Disable Timer2 Compare Match B Interrupt
   TIMSK0 &= ~(1<<OCIE0B);
@@ -650,9 +641,35 @@ void execDccProcessor( DCC_MSG * pDccMsg )
 
 void initDccProcessor( uint8_t ManufacturerId, uint8_t VersionId, uint8_t Flags, uint8_t OpsModeAddressBaseCV )
 {
-  if( Flags & FLAGS_ENABLE_INT0_PULL_UP )
-		DCC_PORT |= (1<<DCC_BIT);
-  
+}
+
+NmraDcc::NmraDcc()
+{
+}
+
+void NmraDcc::pin( uint8_t ExtIntNum, uint8_t ExtIntPinNum, uint8_t EnablePullup)
+{
+  DccProcState.ExtIntNum = ExtIntNum;
+  DccProcState.ExtIntPinNum = ExtIntPinNum;
+	
+  pinMode( ExtIntPinNum, INPUT );
+  if( EnablePullup )
+    digitalWrite(ExtIntPinNum, HIGH);
+}
+
+void NmraDcc::init( uint8_t ManufacturerId, uint8_t VersionId, uint8_t Flags, uint8_t OpsModeAddressBaseCV )
+{
+  // Clear all the static member variables
+  memset( &DccRx, 0, sizeof( DccRx) );
+
+#ifdef TCCR0A
+  // Change Timer0 Waveform Generation Mode from Fast PWM back to Normal Mode
+  TCCR0A &= ~((1<<WGM01)|(1<<WGM00));
+#else  
+#error NmraDcc Library requires a processor with Timer0 Output Compare B feature 
+#endif
+  attachInterrupt( DccProcState.ExtIntNum, ExternalInterruptHandler, RISING);
+
   DccProcState.Flags = Flags ;
   DccProcState.OpsModeAddressBaseCV = OpsModeAddressBaseCV ;
 
@@ -666,29 +683,6 @@ void initDccProcessor( uint8_t ManufacturerId, uint8_t VersionId, uint8_t Flags,
   writeCV( CV_29_CONFIG, ( readCV( CV_29_CONFIG ) & ~cv29Mask ) | cv29Mask ) ;
 
   clearDccProcState( 0 );
-}
-
-NmraDcc::NmraDcc()
-{
-}
-
-void NmraDcc::init( uint8_t ManufacturerId, uint8_t VersionId, uint8_t Flags, uint8_t OpsModeAddressBaseCV )
-{
-  // Clear all the static member variables
-  memset( &DccRx, 0, sizeof( DccRx) );
-
-  // Init Interrupt 0 for Rising Edge
-  EICRA |= (1<<ISC01) | (1<<ISC00) ;
-  EIMSK |= (1<<INT0) ;
-  
-#ifdef TCCR0A
-  // Change Timer0 Waveform Generation Mode from Fast PWM back to Normal Mode
-  TCCR0A &= ~((1<<WGM01)|(1<<WGM00));
-#else  
-#error NmraDcc Library requires a processor with Timer0 Output Compare B feature 
-#endif
-
-  initDccProcessor( ManufacturerId, VersionId, Flags, OpsModeAddressBaseCV ) ;
 }
 
 uint8_t NmraDcc::getCV( uint16_t CV )
@@ -745,4 +739,4 @@ uint8_t NmraDcc::process()
   }
 
   return 0 ;  
-}
+};
