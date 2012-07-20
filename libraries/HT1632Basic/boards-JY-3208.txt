@@ -1,0 +1,23 @@
+##############################################################
+# Append this section to your global boards.txt file
+#
+atmega8JY-3208.name=JY-3208 Clock / ATMega8
+
+atmega8JY-3208.upload.protocol=avrispmkii
+atmega8JY-3208.upload.maximum_size=8192
+atmega8JY-3208.upload.speed=19200
+atmega8JY-3208.upload.using=avrispmkii
+
+atmega8JY-3208.bootloader.low_fuses=0xdf
+atmega8JY-3208.bootloader.high_fuses=0xca
+atmega8JY-3208.bootloader.path=atmega8
+atmega8JY-3208.bootloader.file=ATmegaBOOT.hex
+atmega8JY-3208.bootloader.unlock_bits=0x3F
+atmega8JY-3208.bootloader.lock_bits=0x0F
+
+atmega8JY-3208.build.mcu=atmega8
+atmega8JY-3208.build.f_cpu=8000000L
+atmega8JY-3208.build.core=arduino
+atmega8JY-3208.build.variant=standard
+
+##############################################################
