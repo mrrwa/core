@@ -46,7 +46,6 @@
 #include "ln_buf.h"    
 #include "ln_sw_uart.h"    
 
-
 volatile uint8_t  lnState ;
 volatile uint8_t  lnBitCount ;
 volatile uint8_t  lnCurrentByte ;
@@ -58,6 +57,17 @@ volatile uint8_t  lnTxIndex ;
 volatile uint8_t  lnTxLength ;
 volatile uint8_t  lnTxSuccess ;   // this boolean flag as a message from timer interrupt to send function
 
+volatile uint8_t  *txPort;
+uint8_t           txPin;
+
+#define LN_TX_PORT *txPort
+#define LN_TX_BIT txPin
+
+void setTxPortAndPin(volatile uint8_t *newTxPort, uint8_t newTxPin)
+{
+  txPort = newTxPort;
+  txPin = newTxPin;
+}
 
 /**************************************************************************
  *
@@ -226,8 +236,7 @@ void initLocoNetHardware( LnBuf *RxBuffer )
   // Set the RX line to Input
   cbi( LN_RX_DDR, LN_RX_BIT ) ;
 
-  // Set the TX line to Output, Inactive
-  sbi( LN_TX_DDR, LN_TX_BIT ) ;
+  // Set the TX line to Inactive
   LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT);
 
 #ifdef LN_INIT_COMPARATOR

@@ -46,11 +46,11 @@
 #include <string.h>
 
 #ifndef LN_SW_UART_SET_TX_LOW                               // putting a 1 to the pin to switch on NPN transistor
-#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT)  sbi(LN_TX_PORT, LN_TX_BIT)   // to pull down LN line to drive low level
+#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT)  LN_TX_PORT |= (1 << LN_TX_BIT)   // to pull down LN line to drive low level
 #endif
 
 #ifndef LN_SW_UART_SET_TX_HIGH                              // putting a 0 to the pin to switch off NPN transistor
-#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) cbi(LN_TX_PORT, LN_TX_BIT)   // master pull up will take care of high LN level
+#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT &= ~(1 << LN_TX_BIT)   // master pull up will take care of high LN level
 #endif
 
 // For now we will simply check that TX and RX ARE NOT THE SAME as our circuit
@@ -99,6 +99,7 @@
 // ATTENTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void initLocoNetHardware( LnBuf *RxBuffer );
+void setTxPortAndPin(volatile uint8_t *newTxPort, uint8_t newTxPin);
 LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay);
 
 #endif
