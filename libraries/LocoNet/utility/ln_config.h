@@ -22,19 +22,9 @@
  * 
  ****************************************************************************/
 
-// The TX port can be changed to match whatever pin you want to use,
-// but the RX port *MUST BE* the ICP pin (port PINB bit PB0, Arduino pin 8 on a '168) 
-// (TX is used in Timer ISR as well as sendLocoNetPacketTry in ln_sw_uart.cpp)
-#define LN_TX_PORT  PORTD        // pin 7 is PORTD BIT 7
+// The RX port *MUST BE* the ICP pin (port PINB bit PB0, Arduino pin 8 on a '168) 
 
-#ifdef PD6
-#define LN_TX_BIT   PD6
-#else
-#define LN_TX_BIT   PORTD6
-#endif
-
-#define LN_TX_DDR   DDRD
-#define LN_RX_PORT  PINB         // pin 8 is PORTB BIT 0
+#define LN_RX_PORT  PINB
 
 #ifdef PB0
 #define LN_RX_BIT   PB0
@@ -56,15 +46,27 @@
 
 // From sysdef.h:
 #define LN_SB_SIGNAL          TIMER1_CAPT_vect
+#if defined(TIMSK)
+#define LN_SB_INT_ENABLE_REG  TIMSK
+#define LN_SB_INT_ENABLE_BIT  TICIE1
+#define LN_SB_INT_STATUS_REG  TIFR
+#define LN_SB_INT_STATUS_BIT  ICF1
+#else
 #define LN_SB_INT_ENABLE_REG  TIMSK1
 #define LN_SB_INT_ENABLE_BIT  ICIE1
 #define LN_SB_INT_STATUS_REG  TIFR1
 #define LN_SB_INT_STATUS_BIT  ICF1
+#endif
     
 #define LN_TMR_SIGNAL         TIMER1_COMPA_vect
+#if defined(TIMSK)
+#define LN_TMR_INT_ENABLE_REG TIMSK
+#define LN_TMR_INT_STATUS_REG TIFR
+#else
 #define LN_TMR_INT_ENABLE_REG TIMSK1
-#define LN_TMR_INT_ENABLE_BIT OCIE1A
 #define LN_TMR_INT_STATUS_REG TIFR1
+#endif
+#define LN_TMR_INT_ENABLE_BIT OCIE1A
 #define LN_TMR_INT_STATUS_BIT OCF1A
 #define LN_TMR_INP_CAPT_REG   ICR1      // [BA040319] added defines for:
 #define LN_TMR_OUTP_CAPT_REG  OCR1A     // ICR1, OCR1A, TCNT1, TCCR1B
