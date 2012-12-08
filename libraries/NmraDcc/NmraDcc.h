@@ -101,6 +101,15 @@ class NmraDcc
     uint8_t getCV( uint16_t CV );
     uint8_t setCV( uint16_t CV, uint8_t Value);
 	uint8_t isSetCVReady( void );
+	
+#define DCC_DEBUG
+#ifdef DCC_DEBUG
+	uint8_t getIntCount(void);
+	uint8_t getTickCount(void);
+	uint8_t getBitCount(void);
+	uint8_t getState(void);
+#endif
+
 };
 
 extern void notifyDccReset(uint8_t hardReset ) __attribute__ ((weak));
