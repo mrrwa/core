@@ -50,7 +50,7 @@
 #define TIMER_PRESCALER 64
 
 // We will use a time period of 80us and not 87us as this gives us a bit more time to do other stuff 
-#define DCC_BIT_SAMPLE_PERIOD (F_CPU * 80L / TIMER_PRESCALER / 1000000L)
+#define DCC_BIT_SAMPLE_PERIOD (F_CPU * 70L / TIMER_PRESCALER / 1000000L)
 
 #if (DCC_BIT_SAMPLE_PERIOD > 254)
 #error DCC_BIT_SAMPLE_PERIOD too big, use either larger prescaler or slower processor
@@ -89,7 +89,11 @@ typedef struct
   uint8_t   DuplicateCount ;
   DCC_MSG   LastMsg ;
   uint8_t	ExtIntNum; 
-  uint8_t	ExtIntPinNum; 
+  uint8_t	ExtIntPinNum;
+#ifdef DCC_DEBUG
+  uint8_t	IntCount;
+  uint8_t	TickCount;
+#endif
 } 
 DCC_PROCESSOR_STATE ;
 
@@ -99,8 +103,16 @@ void ExternalInterruptHandler(void)
 {
   OCR0B = TCNT0 + DCC_BIT_SAMPLE_PERIOD ;
 
+#if defined(TIMSK0)
   TIMSK0 |= (1<<OCIE0B);  // Enable Timer0 Compare Match B Interrupt
   TIFR0  |= (1<<OCF0B);   // Clear  Timer0 Compare Match B Flag 
+#elif defined(TIMSK)
+  TIMSK |= (1<<OCIE0B);  // Enable Timer0 Compare Match B Interrupt
+  TIFR  |= (1<<OCF0B);   // Clear  Timer0 Compare Match B Flag 
+#endif
+#ifdef DCC_DEBUG
+	DccProcState.IntCount++;
+#endif
 }
 
 ISR(TIMER0_COMPB_vect)
@@ -111,7 +123,15 @@ ISR(TIMER0_COMPB_vect)
   DccBitVal = !digitalRead(DccProcState.ExtIntPinNum) ;
 
   // Disable Timer0 Compare Match B Interrupt
+#if defined(TIMSK0)
   TIMSK0 &= ~(1<<OCIE0B);
+#elif defined(TIMSK)
+  TIMSK &= ~(1<<OCIE0B);
+#endif
+
+#ifdef DCC_DEBUG
+	DccProcState.TickCount++;
+#endif
 
   DccRx.BitCount++;
 
@@ -702,6 +722,28 @@ uint8_t NmraDcc::isSetCVReady(void)
 	
   return eeprom_is_ready();
 }
+
+#ifdef DCC_DEBUG
+uint8_t NmraDcc::getIntCount(void)
+{
+  return DccProcState.IntCount;
+}
+
+uint8_t NmraDcc::getTickCount(void)
+{
+  return DccProcState.TickCount;
+}
+
+uint8_t NmraDcc::getState(void)
+{
+  return DccRx.State;
+}
+
+uint8_t NmraDcc::getBitCount(void)
+{
+  return DccRx.BitCount;
+}
+#endif
 
 uint8_t NmraDcc::process()
 {
