@@ -2,9 +2,11 @@
 #define LOCONET_INCLUDED
 
 /****************************************************************************
- * 	Copyright (C) 2009 Alex Shepherd
+ * 	Copyright (C) 2009 to 2013 Alex Shepherd
+ * 	Copyright (C) 2013 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
+ * 	Portions Copyright (C) Uhlenbrock Elektronik GmbH
  * 
  * 	This library is free software; you can redistribute it and/or
  * 	modify it under the terms of the GNU Lesser General Public
@@ -25,16 +27,26 @@
  * 	IMPORTANT:
  * 
  * 	Some of the message formats used in this code are Copyright Digitrax, Inc.
- * 	and are used with permission as part of the EmbeddedLocoNet project. That
- * 	permission does not extend to uses in other software products. If you wish
+ * 	and are used with permission as part of the MRRwA (previously EmbeddedLocoNet) project.
+ *  That permission does not extend to uses in other software products. If you wish
  * 	to use this code, algorithm or these message formats outside of
- * 	EmbeddedLocoNet, please contact Digitrax Inc, for specific permission.
+ * 	MRRwA, please contact Digitrax Inc, for specific permission.
  * 
  * 	Note: The sale any LocoNet device hardware (including bare PCB's) that
  * 	uses this or any other LocoNet software, requires testing and certification
  * 	by Digitrax Inc. and will be subject to a licensing agreement.
  * 
  * 	Please contact Digitrax Inc. for details.
+ * 
+ *****************************************************************************
+ * 
+ * 	IMPORTANT:
+ * 
+ * 	Some of the message formats used in this code are Copyright Uhlenbrock Elektronik GmbH
+ * 	and are used with permission as part of the MRRwA (previously EmbeddedLocoNet) project.
+ *  That permission does not extend to uses in other software products. If you wish
+ * 	to use this code, algorithm or these message formats outside of
+ * 	MRRwA, please contact Copyright Uhlenbrock Elektronik GmbH, for specific permission.
  * 
  *****************************************************************************
  * 	DESCRIPTION
@@ -61,6 +73,7 @@
 #endif
 
 #include "utility/ln_buf.h"
+#include "utility/ln_opc.h"
 
 typedef enum
 {
@@ -82,6 +95,26 @@ typedef enum
 #define   LN_BACKOFF_INITIAL  (LN_BACKOFF_MIN + LN_INITIAL_PRIO_DELAY)  // for the first normal tx attempt
 #define   LN_BACKOFF_MAX      (LN_BACKOFF_INITIAL + 10)                 // lower priority is not supported
 
+//
+// LNCV error codes
+// Used by the LNCV callbacks to signal what kind of error has occurred.
+//
+
+// Error-codes for write-requests
+#define LNCV_LACK_ERROR_GENERIC (0)
+// Unsupported/non-existing CV
+#define LNCV_LACK_ERROR_UNSUPPORTED (1)
+// CV is read only
+#define LNCV_LACK_ERROR_READONLY (2)
+// Value out of range
+#define LNCV_LACK_ERROR_OUTOFRANGE (3)
+// Everything OK
+#define LNCV_LACK_OK (127)
+
+// the valid range for module addresses (CV0) as per the LNCV spec.
+#define LNCV_MIN_MODULEADDR (0)
+#define LNCV_MAX_MODULEADDR (65534)
+
 class LocoNetClass
 {
   private:
@@ -95,13 +128,20 @@ class LocoNetClass
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
     LN_STATUS   send(lnMsg *TxPacket, uint8_t PrioDelay);
-    LN_STATUS   send( uint8_t OpCode, uint8_t Data1, uint8_t Data2 );
-    LN_STATUS   send( uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay );
+    LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2);
+    LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
+    LN_STATUS   sendLongAck(uint8_t ucCode);
+    
+    LnBufStats* getStats(void);
+    
+	const char*	getStatusStr(LN_STATUS Status);
     
     uint8_t processSwitchSensorMessage( lnMsg *LnPacket ) ;
-
-    void requestSwitch( uint16_t Address, uint8_t Output, uint8_t Direction ) ;
-    void reportSwitch( uint16_t Address ) ;
+	
+    LN_STATUS requestSwitch( uint16_t Address, uint8_t Output, uint8_t Direction ) ;
+    LN_STATUS reportSwitch( uint16_t Address ) ;
+    LN_STATUS reportSensor( uint16_t Address, uint8_t State ) ;
+    LN_STATUS reportPower( uint8_t State ) ;
 };
 
 extern LocoNetClass LocoNet;
@@ -256,14 +296,110 @@ class LocoNetFastClockClass
 	void process66msActions(void);
 };
 
+/************************************************************************************
+    SV (System Variable Handling
+************************************************************************************/
+
+typedef enum
+{
+  SV_EE_SZ_256 = 0,
+  SV_EE_SZ_512 = 1,
+  SV_EE_SZ_1024 = 2,
+  SV_EE_SZ_2048 = 3,
+  SV_EE_SZ_4096 = 4,
+  SV_EE_SZ_8192 = 5
+} SV_EE_SIZE ;
+
+typedef enum
+{
+  SV_WRITE_SINGLE = 0x01,
+  SV_READ_SINGLE = 0x02,
+  SV_WRITE_MASKED = 0x03,
+  SV_WRITE_QUAD = 0x05,
+  SV_READ_QUAD = 0x06,
+  SV_DISCOVER = 0x07,
+  SV_IDENTIFY = 0x08,
+  SV_CHANGE_ADDRESS = 0x09,
+  SV_RECONFIGURE = 0x0F
+} SV_CMD ;
+
+typedef enum
+{
+  SV_ADDR_EEPROM_SIZE = 1,
+  SV_ADDR_SW_VERSION = 2,
+  SV_ADDR_NODE_ID_L = 3,
+  SV_ADDR_NODE_ID_H = 4,
+  SV_ADDR_SERIAL_NUMBER_L = 5,
+  SV_ADDR_SERIAL_NUMBER_H = 6,
+  SV_ADDR_USER_BASE = 7,
+} SV_ADDR ;
+
+typedef enum
+{
+  SV_OK = 0,
+  SV_ERROR = 1,
+  SV_DEFERRED_PROCESSING_NEEDED = 2
+} SV_STATUS ;
+
+class LocoNetSystemVariableClass
+{
+  private:
+	uint16_t 	vendorId ;
+	uint16_t 	deviceId ;
+    uint8_t     swVersion ;
+    
+    uint8_t DeferredProcessingRequired ;
+    uint8_t DeferredSrcAddr ;
+    
+    uint8_t readSVStorage(uint16_t Offset );
+    uint8_t writeSVStorage(uint16_t Offset, uint8_t Value);
+    uint8_t isSVStorageValid(uint16_t Offset);
+    uint16_t readSVNodeId(void);
+    uint16_t writeSVNodeId(uint16_t newNodeId);
+    bool CheckAddressRange(uint16_t startAddress, uint8_t Count);
+
+  public:
+	void init(uint16_t newVendorId, uint16_t newDeviceId, uint8_t newSwVersion);
+	SV_STATUS processMessage(lnMsg *LnPacket );
+    SV_STATUS doDeferredProcessing( void );
+};
+
+class LocoNetCVClass
+{
+  private:
+    void makeLNCVresponse( UhlenbrockMsg & ub, uint8_t originalSource, uint16_t first, uint16_t second, uint16_t third, uint8_t last );
+    
+      // Computes the PXCT byte from the data bytes in the given UhlenbrockMsg.
+    void computePXCTFromBytes( UhlenbrockMsg & ub) ;
+
+      // Computes the correct data bytes using the containes PXCT byte
+    void computeBytesFromPXCT( UhlenbrockMsg & ub) ;
+
+      // Computes an address from a low- and a high-byte
+    uint16_t getAddress(uint8_t lower, uint8_t higher) ;
+
+  public:
+	  //Call this method when you want to implement a module that can be configured via Uhlenbrock LNVC messages
+	uint8_t processLNCVMessage( lnMsg *LnPacket ) ;
+};
+
+/************************************************************************************
+    Call-back functions
+************************************************************************************/
+
 #if defined (__cplusplus)
 	extern "C" {
 #endif
 
 extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak));
+
+// Address: Switch Address.
+// Output: Value 0 for Coil Off, anything else for Coil On
+// Direction: Value 0 for Closed/GREEN, anything else for Thrown/RED
 extern void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
+extern void notifyPower( uint8_t State ) __attribute__ ((weak));
 
 // Throttle notify Call-back functions
 extern void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot ) __attribute__ ((weak));
@@ -277,6 +413,68 @@ extern void notifyThrottleState( uint8_t UserData, TH_STATE PrevState, TH_STATE 
 // FastClock notify Call-back functions
 extern void notifyFastClock( uint8_t Rate, uint8_t Day, uint8_t Hour, uint8_t Minute, uint8_t Sync ) __attribute__ ((weak));
 extern void notifyFastClockFracMins( uint16_t FracMins ) __attribute__ ((weak));
+
+// System Variable notify Call-back functions
+extern void notifySVChanged(uint16_t Offset) __attribute__ ((weak));
+
+// LNCV notify Call-back functions
+
+// Negative return codes will result in no message being sent.
+// Where a value response is appropriate, a return value of LNCV_LACK_OK will trigger the
+// response being sent.
+// Other values greater than 0 will result in a LACK message being sent.
+// When no value result is appropriate, LNCV_LACK_OK will be sent as a LACK.
+
+/**
+ * TODO: General LNCV documentation
+ * Pick an ArtNr
+ * Implement your code to the following behaviour...
+ */
+
+/**
+ * Notification that an LNCVDiscover message was sent. If a module wants to react to this,
+ * It should return LNCV_LACK_OK and set ArtNr and ModuleAddress accordingly.
+ * A response just as in the case of notifyLNCVProgrammingStart will be generated.
+ * If a module responds to a LNCVDiscover, it should apparently enter programming mode immediately.
+ */
+extern int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));;
+
+/**
+ * Notification that a LNCVProgrammingStart message was received. Application code should process this message and
+ * set the return code to LNCV_LACK_OK in case this message was intended for this module (i.e., the addresses match).
+ * In case ArtNr and/or ModuleAddress were Broadcast addresses, the Application Code should replace them by their
+ * real values.
+ * The calling code will then generate an appropriate ACK message.
+ * A return code different than LACK_LNCV_OK will result in no response being sent.
+ */
+extern int8_t notifyLNCVprogrammingStart ( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));
+
+/**
+ * Notification that a LNCV read request message was received. Application code should process this message,
+ * set the lncvValue to its respective value and set an appropriate return code.
+ * return LNCV_LACK_OK leads the calling code to create a response containing lncvValue.
+ * return code >= 0 leads to a NACK being sent.
+ * return code < 0 will result in no reaction.
+ */
+extern int8_t notifyLNCVread ( uint16_t ArtNr, uint16_t lncvAddress, uint16_t, uint16_t & lncvValue ) __attribute__ ((weak));
+
+/**
+ * Notification that a LNCV value should be written. Application code should process this message and
+ * set an appropriate return code.
+ * Note 1: LNCV 0 is spec'd to be the ModuleAddress.
+ * Note 2: Changes to LNCV 0 must be reflected IMMEDIATELY! E.g. the programmingStop command will
+ * be sent using the new address.
+ *
+ * return codes >= 0 will result in a LACK containing the return code being sent.
+ * return codes < 0 will result in no reaction.
+ */
+extern int8_t notifyLNCVwrite ( uint16_t ArtNr, uint16_t lncvAddress, uint16_t lncvValue ) __attribute__ ((weak));
+
+/**
+ * Notification that an LNCV Programming Stop message was received.
+ * This message is noch ACKed, thus does not require a result to be returned from the application.
+ */
+extern void notifyLNCVprogrammingStop( uint16_t ArtNr, uint16_t ModuleAddress ) __attribute__ ((weak));
 
 #if defined (__cplusplus)
 }
