@@ -1,7 +1,7 @@
 # Datatypes (KEYWORD1)
 
 OnePinKeypad				KEYWORD1
-LCD_KEY_PRESS				KEYWORD1
+LcdKeyPress					KEYWORD1
 
 # Methods and Functions (KEYWORD2)
 
