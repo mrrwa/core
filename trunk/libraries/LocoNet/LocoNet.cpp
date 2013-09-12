@@ -1322,8 +1322,8 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
 #define LNCV_FLAG_RO 0x01
 // other flags are currently unused
 
-#define DEBUG_OUTPUT
-//#undef DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
+#undef DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
 //#define DEBUG(x) Serial.print(F(x))
