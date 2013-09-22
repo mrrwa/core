@@ -566,6 +566,16 @@ typedef struct se_t {
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } seMsg;
 
+typedef union {
+	uint8_t D[7];
+	struct {
+		uint16_t deviceClass;
+		uint16_t lncvNumber;
+		uint16_t lncvValue;
+		uint8_t flags;
+	} data;
+} UhlenbrockMsgPayload;
+
 typedef struct
 {
 	uint8_t command;   // OPC_PEER_XFER for replies, OPC_IMM_PACKET for commands
@@ -575,7 +585,7 @@ typedef struct
 	uint8_t DSTH;      // destination, high byte
 	uint8_t ReqId;     // Request ID, distinguishes commands
 	uint8_t PXCT1;     // MSBs of following data
-	uint8_t D[7];
+	UhlenbrockMsgPayload payload; // Data Bytes
 } UhlenbrockMsg;
 
 typedef struct
