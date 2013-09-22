@@ -1322,14 +1322,38 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
 #define LNCV_FLAG_RO 0x01
 // other flags are currently unused
 
-//#define DEBUG_OUTPUT
-#undef DEBUG_OUTPUT
+#define DEBUG_OUTPUT
+//#undef DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
 //#define DEBUG(x) Serial.print(F(x))
 #define DEBUG(x) Serial.print(x)
 #else
 #define DEBUG(x)
+#endif
+
+#ifdef DEBUG_OUTPUT
+void printPacket(lnMsg* LnPacket) {
+  Serial.print("LoconetPacket ");
+  Serial.print(LnPacket->ub.command, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.mesg_size, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.SRC, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.DSTL, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.DSTH, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.ReqId, HEX);
+  Serial.print(" ");
+  Serial.print(LnPacket->ub.PXCT1, HEX);
+  for (int i(0); i < 7; ++i) {
+    Serial.print(" ");
+    Serial.print(LnPacket->ub.payload.D[i], HEX);
+  }
+  Serial.print("\n");
+}
 #endif
 
 uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
@@ -1344,48 +1368,45 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 		if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
 			// It is a LNCV programming message
 			computeBytesFromPXCT(LnPacket->ub);
-			uint16_t first(getAddress(LnPacket->ub.D[0], LnPacket->ub.D[1]));
-			uint16_t second(getAddress(LnPacket->ub.D[2], LnPacket->ub.D[3]));
-			uint16_t third(getAddress(LnPacket->ub.D[4], LnPacket->ub.D[5]));
 			#ifdef DEBUG_OUTPUT
 			Serial.print("Message bytes: ");
 			Serial.print(LnPacket->ub.ReqId);
 			Serial.write(" ");
-			Serial.print(first, HEX);
+			Serial.print(LnPacket->ub.payload.data.deviceClass, HEX);
 			Serial.write(" ");
-			Serial.print(second, HEX);
+			Serial.print(LnPacket->ub.payload.data.lncvNumber, HEX);
 			Serial.write(" ");
-			Serial.print(third, HEX);
+			Serial.print(LnPacket->ub.payload.data.lncvValue, HEX);
 			Serial.write("\n");
 			#endif
 
-			UhlenbrockMsg response;
+			lnMsg response;
 
 			switch (LnPacket->ub.ReqId) {
 			case LNCV_REQID_CFGREQUEST:
-				if (first == 0xFFFF && second == 0x0000 && third == 0xFFFF) {
+				if (LnPacket->ub.payload.data.deviceClass == 0xFFFF && LnPacket->ub.payload.data.lncvNumber == 0x0000 && LnPacket->ub.payload.data.lncvValue == 0xFFFF) {
 					// This is a discover message
 					DEBUG("LNCV discover: ");
 					if (notifyLNCVdiscover) {
 						DEBUG(" executing...");
-						if (notifyLNCVdiscover(first, third) == LNCV_LACK_OK) {
-							makeLNCVresponse(response, LnPacket->ub.SRC, first, 0x00, third, 0x00);
-							LocoNet.send((lnMsg*)&response);
+						if (notifyLNCVdiscover(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK) {
+							makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x00);
+							LocoNet.send(&response);
 						}
 					}
 					#ifdef DEBUG_OUTPUT
 					else {DEBUG(" NOT EXECUTING!");}
 					#endif
-				} else if (LnPacket->ub.D[6] == 0x00) {
+				} else if (LnPacket->ub.payload.data.flags == 0x00) {
 					// This can only be a read message
 					DEBUG("LNCV read: ");
 					if (notifyLNCVread) {
 						DEBUG(" executing...");
-						int8_t returnCode(notifyLNCVread(first, second, third, third));
+						int8_t returnCode(notifyLNCVread(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue, LnPacket->ub.payload.data.lncvValue));
 						if (returnCode == LNCV_LACK_OK) {
 							// return the read value
-							makeLNCVresponse(response, LnPacket->ub.SRC, first, second, third, 0x00); // TODO: D7 was 0x80 here, but spec says that it is unused.
-							LocoNet.send((lnMsg*)&response);	
+							makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue, 0x00); // TODO: D7 was 0x80 here, but spec says that it is unused.
+							LocoNet.send(&response);	
 							ConsumedFlag = 1;
 						} else if (returnCode >= 0) {
 							uint8_t old_opcode(0x7F & LnPacket->ub.command);
@@ -1400,20 +1421,32 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 				} else {
 					// Its a "control" message
 					DEBUG("LNCV control: ");
-					if ((LnPacket->ub.D[6] & LNCV_FLAG_PRON) != 0x00 && ((LnPacket->ub.D[6] & LNCV_FLAG_PROFF) != 0x00)) {
+					if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00 && ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00)) {
 						DEBUG("Illegal, ignoring.");
 						// Illegal message, no action.
-					} else if ((LnPacket->ub.D[6] & LNCV_FLAG_PRON) != 0x00) {
+					} else if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00) {
 						DEBUG("Programming Start, ");
 						// LNCV PROGAMMING START
 						// We'll skip the check whether D[2]/D[3] are 0x0000.
 						if (notifyLNCVprogrammingStart) {
 							DEBUG(" executing...");
-							if (notifyLNCVprogrammingStart(first, third) == LNCV_LACK_OK) {
-								DEBUG("LNCV_LACK_OK \n");
-								makeLNCVresponse(response, LnPacket->ub.SRC, first, 0x00, third, 0x80);
+							if (notifyLNCVprogrammingStart(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK) {
+								DEBUG("LNCV_LACK_OK ");
+								DEBUG(LnPacket->ub.payload.data.deviceClass);
+								DEBUG(" ");
+								DEBUG(LnPacket->ub.payload.data.lncvValue);
+								DEBUG("\n");
+								makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x80);
 								delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
-								LocoNet.send((lnMsg*)&response);	
+								#ifdef DEBUG_OUTPUT
+								printPacket((lnMsg*)&response);
+								#endif
+								LN_STATUS status = LocoNet.send((lnMsg*)&response);	
+								#ifdef DEBUG_OUTPUT
+								Serial.print(F("Return Code from Send: "));
+								Serial.print(status, HEX);
+								Serial.print("\n");
+								#endif
 								ConsumedFlag = 1;
 							} // not for us? then no reaction!
 							#ifdef DEBUG_OUTPUT
@@ -1425,10 +1458,10 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 						#endif
 							
 					}
-					if ((LnPacket->ub.D[6] & LNCV_FLAG_PROFF) != 0x00) {
+					if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00) {
 						// LNCV PROGRAMMING END
 						if (notifyLNCVprogrammingStop) {
-							notifyLNCVprogrammingStop(first, third);
+							notifyLNCVprogrammingStop(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue);
 							ConsumedFlag = 1;
 						}
 					}
@@ -1439,7 +1472,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 			case LNCV_REQID_CFGWRITE:
 				if (notifyLNCVwrite) {
 					// Negative return code indicates that we are not interested in this message.
-					int8_t returnCode(notifyLNCVwrite(first, second, third));
+					int8_t returnCode(notifyLNCVwrite(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue));
 					if (returnCode >= 0) {
 						ConsumedFlag = 1;
 						uint8_t old_opcode(0x7F & LnPacket->ub.command);
@@ -1477,13 +1510,10 @@ void LocoNetCVClass::makeLNCVresponse( UhlenbrockMsg & ub, uint8_t originalSourc
 	}
 	ub.ReqId = LNCV_REQID_CFGREAD;
 	ub.PXCT1 = 0x00;
-	ub.D[0] = lowByte(first);
-	ub.D[1] = highByte(first);
-	ub.D[2] = lowByte(second);
-	ub.D[3] = highByte(second);
-	ub.D[4] = lowByte(third);
-	ub.D[5] = highByte(third);
-	ub.D[6] = last;
+	ub.payload.data.deviceClass = first;
+	ub.payload.data.lncvNumber = second;
+	ub.payload.data.lncvValue = third;
+	ub.payload.data.flags = last;
 	computePXCTFromBytes(ub);
 }
 
@@ -1494,7 +1524,7 @@ void LocoNetCVClass::computeBytesFromPXCT( UhlenbrockMsg & ub) {
 	for (int i(0); i < 8; ++i) {
 	if ((ub.PXCT1 & mask) != 0x00) {
 		// Bit was set
-		ub.D[i] |= 0x80;
+		ub.payload.D[i] |= 0x80;
 	}
 	mask <<= 1;
 	}
@@ -1506,9 +1536,9 @@ void LocoNetCVClass::computePXCTFromBytes( UhlenbrockMsg & ub ) {
 	ub.PXCT1 = 0x00;
 	// Data has only 7 bytes, so we consider only 7 bits from PXCT1
 	for (int i(0); i < 8; ++i) {
-	if ((ub.D[i] & 0x80) != 0x00) {
+	if ((ub.payload.D[i] & 0x80) != 0x00) {
 		ub.PXCT1 |= mask; // add bit to PXCT1
-		ub.D[i] &= 0x7F;	// remove bit from data byte
+		ub.payload.D[i] &= 0x7F;	// remove bit from data byte
 	}
 	mask <<= 1;
 	}
