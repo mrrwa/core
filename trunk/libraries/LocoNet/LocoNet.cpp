@@ -317,37 +317,6 @@ LN_STATUS LocoNetClass::reportSensor( uint16_t Address, uint8_t State )
   return send( OPC_INPUT_REP, AddrL, AddrH ) ;
 }
 
-//void LocoNetClass::reportSensor( uint16_t Address, int state) {
-//  // get the lower byte
-//  byte first(lowByte(Address));
-//  
-//  // extract the lowest address bit
-//  boolean lowestAddrBit(first & 0x01);
-//  
-//  // shift the lower byte to remove the least significant address bit
-//  first >>= 1;
-//  
-//  // get the four lower bits from the upper address byte
-//  byte second(highByte(Address) >> 4);
-//  
-//  // Set this bit - reserved by the loconet spec, must be set to 1.
-//  second |= OPC_INPUT_REP_CB;
-//  
-//  // reintroduce the lowest address bit as the "SWITCH" bit
-//  // see Loconet Personal Edition Spec as to why this is done
-//  if (lowestAddrBit) {
-//    second |= OPC_INPUT_REP_SW;
-//  }
-//  
-//  // Set the LOW/HIGH bit (the actual occupancy - LOW is interpreted as free)
-//  if (state == HIGH) {
-//    second |= OPC_INPUT_REP_HI;
-//  }
-//  
-//  // Send the message via LocoNet
-//  LocoNet.send(OPC_INPUT_REP, first, second);
-//}
-
 LocoNetClass LocoNet = LocoNetClass();
 
 // LocoNet Throttle Support
@@ -1322,8 +1291,8 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
 #define LNCV_FLAG_RO 0x01
 // other flags are currently unused
 
-#define DEBUG_OUTPUT
-//#undef DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
+#undef DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
 //#define DEBUG(x) Serial.print(F(x))
