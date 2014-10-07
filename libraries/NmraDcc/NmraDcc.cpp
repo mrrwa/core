@@ -450,17 +450,34 @@ void processMultiFunctionMessage( uint16_t Addr, uint8_t Cmd, uint8_t Data1, uin
 
     break;
 
-  case 0b10000000:  // FG 1
+  case 0b10000000:  // Function Group 0..4
     if( notifyDccFunc )
-      notifyDccFunc( Addr, 1, Cmd & 0b00011111 ) ;
+      notifyDccFunc( Addr, FN_0_4, Cmd & 0b00011111 ) ;
     break;
 
-  case 0b10100000:  // FG 2
-    if( notifyDccFunc )
-      notifyDccFunc( Addr, 2, Cmd & 0b00011111 ) ;
+  case 0b10100000:  // Function Group 5..8
+    if( notifyDccFunc)
+    {
+      if (Cmd & 0b00010000 )
+        notifyDccFunc( Addr, FN_5_8,  Cmd & 0b00001111 ) ;
+      else
+        notifyDccFunc( Addr, FN_9_12, Cmd & 0b00001111 ) ;
+    }
     break;
 
-  case 0b11000000:  // Future Expansion
+  case 0b11000000:  // Feature Expansion Instruction
+  	switch(Cmd & 0b00011111)
+  	{
+  	case 0B00011110:
+  	  if( notifyDccFunc )
+	    notifyDccFunc( Addr, FN_13_20, Data1 ) ;
+	  break;
+	  
+  	case 0B00011111:
+  	  if( notifyDccFunc )
+	    notifyDccFunc( Addr, FN_21_28, Data1 ) ;
+	  break;
+  	}
     break;
 
   case 0b11100000:  // CV Access
