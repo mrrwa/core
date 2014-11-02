@@ -145,7 +145,7 @@ class NmraDcc
     uint8_t setCV( uint16_t CV, uint8_t Value);
 	uint8_t isSetCVReady( void );
 	
-#define DCC_DEBUG
+// #define DCC_DEBUG
 #ifdef DCC_DEBUG
 	uint8_t getIntCount(void);
 	uint8_t getTickCount(void);
