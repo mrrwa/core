@@ -596,7 +596,7 @@ void execDccProcessor( DCC_MSG * pDccMsg )
         DccProcState.DuplicateCount = 0 ;
         memcpy( &DccProcState.LastMsg, pDccMsg, sizeof( DCC_MSG ) ) ;
       }
-      // Wait until you see 2 identicle packets before acting on a Service Mode Packet 
+      // Wait until you see 2 identical packets before acting on a Service Mode Packet 
       else
       {
         DccProcState.DuplicateCount++ ;
@@ -637,7 +637,7 @@ void execDccProcessor( DCC_MSG * pDccMsg )
 
           BoardAddress = ( ( (~pDccMsg->Data[1]) & 0b01110000 ) << 2 ) | ( pDccMsg->Data[0] & 0b00111111 ) ;
 
-          // If we're filtering was it my board address Our or a broadcast address
+          // If we're filtering was it my board address or a broadcast address
           if( ( DccProcState.Flags & FLAGS_MY_ADDRESS_ONLY ) && ( BoardAddress != getMyAddr() ) && ( BoardAddress != 511 ) )
             return;
 
